@@ -63,10 +63,11 @@ class Roll:
 
 
 class Character:
-    def __init__(self, name, ability_scores, health, attacks, spells, hostile):
+    def __init__(self, name, level, ability_scores, health, attacks, spells, hostile):
         self.name = name
+        self.level = level
         self.ability_scores = ability_scores
-        self.ability_modifiers = self.calculate_ability_modifiers(self.ability_scores)
+        
         self.health = health
         self.attacks = attacks
         self.spells = spells
@@ -74,9 +75,9 @@ class Character:
         self.hostile = hostile
         self.concentration = False
 
-
+        self.ability_modifiers = self.calculate_ability_modifiers(self.ability_scores)
         self.armor_class = 10 + self.ability_modifiers['dex']
-
+        self.proficiency_bonus = math.floor((self.level-1)/4)+2
 
 
     def calculate_ability_modifiers(self, ability_scores):
@@ -113,7 +114,7 @@ class Attack:
         self.attack_ability = attack_ability
 
     def execute(self, attacker, target):
-        attack_modifier = attacker.ability_modifiers[self.attack_ability]
+        attack_modifier = attacker.ability_modifiers[self.attack_ability] + attacker.proficiency_bonus
         attack_roll = self.attack_roll.get_outcome() + attack_modifier
         print(f'{self.name} attack roll: {attack_roll}')
         if attack_roll >= target.armor_class:
