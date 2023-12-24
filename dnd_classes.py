@@ -40,6 +40,8 @@ class Roll:
             if 'd' in roll:
                 advantage = '^' in roll
                 disadvantage = 'v' in roll
+                if advantage == disadvantage:
+                    advantage, disadvantage = False, False
                 #assumes that v/^ is at the end of the dice roll. also 2d20^ will be higher roll between 2d20 and 2d20
                 roll = roll[:-1] if (advantage or disadvantage) else roll 
                 die = Die(roll)
@@ -139,6 +141,7 @@ class CombatManager:
         self.roll = Roll('1d20')
         for character in characters:
             character.initiative = self.roll.get_outcome()+character.ability_modifiers['dex']
+            print(f"{character.name} initiative: {character.initiative}")
         self.initiative_order = sorted(characters, key=lambda x: x.initiative, reverse=True)
 
     def combat_round(self):
@@ -179,64 +182,3 @@ class CombatManager:
                 return character
         return None
     
-
-# Initialize characters and combat manager
-hero = Character("Hero",
-                {'str':6, 'dex':10, 'con':10, 'int': 10, 'wis': 10, 'cha':10},50,[],[Spell("Holy Smite", '4d4')],False)
-skeleton = Character("Skeleton",
-                    {'str':10, 'dex':10, 'con':10, 'int': 10, 'wis': 10, 'cha':10},20,[Attack("Melee", '10d4','str')],[], True)
-zombie = Character("Zombie",
-                   {'str':10, 'dex':10, 'con':10, 'int': 10, 'wis': 10, 'cha':10},15,[Attack("Claw", '1d4','str')],[],True)
-
-characters = [hero,skeleton, zombie, zombie, zombie]
-combat_manager = CombatManager(characters)
-
-def run_combat(characters):
-
-    combat_manager = CombatManager(characters)
-    while True:
-        if not combat_manager.combat_round():
-            break
-    winning_side = combat_manager.select_winning_side()
-    return winning_side
-
-N=500
-
-import os
-import sys
-from contextlib import contextmanager
-import itertools
-
-@contextmanager
-def suppress_print():
-    original_stdout = sys.stdout
-    sys.stdout = open(os.devnull, 'w')
-    try:
-        yield
-    finally:
-        sys.stdout.close()
-        sys.stdout = original_stdout
-
-
-with suppress_print():
-    winner=[]
-    dex=[]
-    dice=[]
-    health=[]
-    for X, Y, Z, N in itertools.product(range(1, 11), range(1, 11), range(1,10), range(N)):
-        hero = Character("Hero",
-            {'str':6, 'dex':10, 'con':10, 'int': 10, 'wis': 10, 'cha':10},50,[],[Spell("Holy Smite", '4d4')],False)
-        skeleton = Character("Skeleton",
-            {'str':10, 'dex':8+Y, 'con':10, 'int': 10, 'wis': 10, 'cha':10},20+Z,[Attack("Melee", f'{X}d4','str')],[], True)
-        characters = [hero,skeleton]
-        winner.append(run_combat(characters))
-        dex.append(8+Y)
-        dice.append(X)
-        health.append(Z)
-    
-    import pandas as pd
-    dict = {'winner':winner, 'dex':dex, 'dice':dice, 'health':health}
-    df = pd.DataFrame(dict)
-    df.to_csv('results.csv')
-    print('results save to results.csv file.')
-
